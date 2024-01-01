@@ -1,0 +1,13 @@
+[package]
+name = "philiprehberger-bench-utils"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+authors = ["Philip Rehberger"]
+description = "Micro-benchmarking utilities with statistical analysis, comparison, and regression detection"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/philiprehberger/rs-bench-utils"
+documentation = "https://docs.rs/philiprehberger-bench-utils"
+keywords = ["benchmark", "performance", "statistics", "profiling", "timing"]
+categories = ["development-tools::profiling", "development-tools"]
