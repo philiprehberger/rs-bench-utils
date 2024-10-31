@@ -1,9 +1,8 @@
 # rs-bench-utils
 
-[![Crates.io](https://img.shields.io/crates/v/philiprehberger-bench-utils)](https://crates.io/crates/philiprehberger-bench-utils)
-[![docs.rs](https://img.shields.io/docsrs/philiprehberger-bench-utils)](https://docs.rs/philiprehberger-bench-utils)
 [![CI](https://github.com/philiprehberger/rs-bench-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/rs-bench-utils/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/philiprehberger-bench-utils.svg)](https://crates.io/crates/philiprehberger-bench-utils)
+[![License](https://img.shields.io/github/license/philiprehberger/rs-bench-utils)](LICENSE)
 
 Micro-benchmarking utilities with statistical analysis, comparison, and regression detection
 
