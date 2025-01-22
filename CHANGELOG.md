@@ -1,6 +1,8 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## 0.1.3 (2026-03-22)
+
+- Fix README, CHANGELOG, and CI compliance
 
 ## 0.1.2 (2026-03-20)
 
@@ -10,9 +12,7 @@ All notable changes to this project will be documented in this file.
 
 - Re-release with registry token configured
 
-## [0.1.0] - 2026-03-20
-
-### Added
+## 0.1.0 (2026-03-20)
 
 - `BenchResult` struct with statistical methods (mean, median, stddev, min, max, p95, p99)
 - `bench` function for measuring closure performance
