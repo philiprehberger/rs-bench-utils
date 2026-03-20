@@ -7,11 +7,6 @@
 
 Micro-benchmarking utilities with statistical analysis, comparison, and regression detection
 
-## Requirements
-
-- Rust 1.70+
-- No external dependencies
-
 ## Installation
 
 Add to your `Cargo.toml`:
