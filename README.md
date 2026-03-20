@@ -18,7 +18,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dev-dependencies]
-philiprehberger-bench-utils = "0.1.1"
+philiprehberger-bench-utils = "0.1.2"
 ```
 
 ## Usage

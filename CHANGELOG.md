@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.2 (2026-03-20)
+
+- Fix CI workflow, re-publish after rate limit
+
 ## 0.1.1 (2026-03-20)
 
 - Re-release with registry token configured
