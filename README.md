@@ -8,16 +8,12 @@ Micro-benchmarking utilities with statistical analysis, comparison, and regressi
 
 ## Installation
 
-Add to your `Cargo.toml`:
-
 ```toml
-[dev-dependencies]
-philiprehberger-bench-utils = "0.1.2"
+[dependencies]
+philiprehberger-bench-utils = "0.1.3"
 ```
 
 ## Usage
-
-### Basic benchmark
 
 ```rust
 use philiprehberger_bench_utils::{bench, black_box};
@@ -101,11 +97,10 @@ println!("{}", group.summary());
 ## Development
 
 ```bash
-cargo build
 cargo test
 cargo clippy -- -D warnings
 ```
 
 ## License
 
-[MIT](LICENSE)
+MIT
