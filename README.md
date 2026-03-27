@@ -3,6 +3,7 @@
 [![CI](https://github.com/philiprehberger/rs-bench-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/rs-bench-utils/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/philiprehberger-bench-utils.svg)](https://crates.io/crates/philiprehberger-bench-utils)
 [![License](https://img.shields.io/github/license/philiprehberger/rs-bench-utils)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 Micro-benchmarking utilities with statistical analysis, comparison, and regression detection
 
