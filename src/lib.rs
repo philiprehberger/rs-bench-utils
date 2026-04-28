@@ -101,6 +101,35 @@ impl BenchResult {
         1_000_000_000.0 / mean
     }
 
+    /// Returns the coefficient of variation as a percentage (`stddev / mean * 100`).
+    ///
+    /// A common signal-to-noise indicator: values under 5% are very stable,
+    /// values over 20% suggest the benchmark is noisy. Returns `0.0` when
+    /// the mean is zero.
+    pub fn cv(&self) -> f64 {
+        let mean = self.mean_ns();
+        if mean == 0.0 {
+            return 0.0;
+        }
+        self.stddev_ns() / mean * 100.0
+    }
+
+    /// Returns the 95% confidence interval for the mean as `(low, high)`,
+    /// using the normal approximation (`mean ± 1.96 * stddev / sqrt(n)`).
+    ///
+    /// Returns `(mean, mean)` for samples with fewer than 2 entries.
+    pub fn confidence_interval_95(&self) -> (f64, f64) {
+        let n = self.samples.len();
+        if n < 2 {
+            let mean = self.mean_ns();
+            return (mean, mean);
+        }
+        let mean = self.mean_ns();
+        let stderr = self.stddev_ns() / (n as f64).sqrt();
+        let margin = 1.96 * stderr;
+        (mean - margin, mean + margin)
+    }
+
     /// Returns a human-readable string for the mean duration.
     ///
     /// Formats as nanoseconds, microseconds, milliseconds, or seconds
@@ -258,6 +287,33 @@ impl BenchGroup {
             .max_by(|a, b| a.mean_ns().partial_cmp(&b.mean_ns()).unwrap())
     }
 
+    /// Compares two named results already in the group without re-running.
+    ///
+    /// Returns `None` if either name is missing. The first argument is the
+    /// baseline; the second is the candidate.
+    pub fn compare(&self, baseline_name: &str, candidate_name: &str) -> Option<CompareResult> {
+        let baseline = self.results.iter().find(|r| r.name == baseline_name)?;
+        let candidate = self.results.iter().find(|r| r.name == candidate_name)?;
+        let baseline_mean = baseline.mean_ns();
+        let candidate_mean = candidate.mean_ns();
+        let speedup = if candidate_mean > 0.0 {
+            baseline_mean / candidate_mean
+        } else {
+            f64::INFINITY
+        };
+        let diff_percent = if baseline_mean > 0.0 {
+            ((candidate_mean - baseline_mean) / baseline_mean) * 100.0
+        } else {
+            0.0
+        };
+        Some(CompareResult {
+            baseline: baseline.clone(),
+            candidate: candidate.clone(),
+            speedup,
+            diff_percent,
+        })
+    }
+
     /// Returns a summary table of all results sorted by mean duration (fastest first).
     pub fn summary(&self) -> String {
         if self.results.is_empty() {
@@ -349,6 +405,55 @@ where
     }
 
     bench(name, iterations, f)
+}
+
+/// Runs a benchmark where each iteration first calls `setup` to produce a fresh
+/// input, then measures only the time spent in `f`.
+///
+/// `setup` is *not* included in samples. Use this when each iteration mutates
+/// or consumes the input — for example, benchmarking `Vec::sort` requires
+/// fresh unsorted data per iteration.
+///
+/// # Examples
+///
+/// ```
+/// use philiprehberger_bench_utils::{bench_with_setup, black_box};
+///
+/// let result = bench_with_setup(
+///     "sort_unstable",
+///     50,
+///     || vec![3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5],
+///     |mut v| {
+///         v.sort_unstable();
+///         black_box(v);
+///     },
+/// );
+/// assert_eq!(result.iterations, 50);
+/// assert_eq!(result.samples.len(), 50);
+/// ```
+pub fn bench_with_setup<S, T, F>(name: &str, iterations: usize, setup: S, f: F) -> BenchResult
+where
+    S: Fn() -> T,
+    F: Fn(T),
+{
+    let mut samples = Vec::with_capacity(iterations);
+    let overall_start = Instant::now();
+
+    for _ in 0..iterations {
+        let input = setup();
+        let start = Instant::now();
+        f(input);
+        samples.push(start.elapsed().as_nanos());
+    }
+
+    let total_ns = overall_start.elapsed().as_nanos();
+
+    BenchResult {
+        name: name.to_string(),
+        iterations,
+        total_ns,
+        samples,
+    }
 }
 
 /// Compares two closures by benchmarking each for `iterations` runs.
@@ -892,6 +997,100 @@ mod tests {
         });
         assert_eq!(result.iterations, 50);
         assert_eq!(result.samples.len(), 50);
+    }
+
+    #[test]
+    fn test_cv_calculation() {
+        let result = BenchResult {
+            name: "test".to_string(),
+            iterations: 2,
+            total_ns: 30,
+            samples: vec![10, 20],
+        };
+        // mean=15, stddev≈7.071, cv = 7.071/15*100 ≈ 47.14
+        let cv = result.cv();
+        assert!((cv - 47.14).abs() < 0.5, "cv={}", cv);
+    }
+
+    #[test]
+    fn test_cv_zero_mean() {
+        let result = BenchResult {
+            name: "empty".to_string(),
+            iterations: 0,
+            total_ns: 0,
+            samples: vec![],
+        };
+        assert_eq!(result.cv(), 0.0);
+    }
+
+    #[test]
+    fn test_confidence_interval_95() {
+        let result = BenchResult {
+            name: "test".to_string(),
+            iterations: 4,
+            total_ns: 100,
+            samples: vec![20, 25, 25, 30],
+        };
+        // mean=25, stddev≈4.082, stderr=4.082/2=2.041, margin≈4.0
+        let (low, high) = result.confidence_interval_95();
+        assert!((low - 21.0).abs() < 0.5, "low={}", low);
+        assert!((high - 29.0).abs() < 0.5, "high={}", high);
+    }
+
+    #[test]
+    fn test_confidence_interval_95_single_sample() {
+        let result = BenchResult {
+            name: "single".to_string(),
+            iterations: 1,
+            total_ns: 100,
+            samples: vec![100],
+        };
+        let (low, high) = result.confidence_interval_95();
+        assert_eq!(low, 100.0);
+        assert_eq!(high, 100.0);
+    }
+
+    #[test]
+    fn test_bench_with_setup_runs_setup_each_iteration() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let setup_calls = AtomicUsize::new(0);
+        let f_calls = AtomicUsize::new(0);
+
+        let result = bench_with_setup(
+            "with_setup",
+            25,
+            || {
+                setup_calls.fetch_add(1, Ordering::SeqCst);
+                vec![3u32, 1, 2]
+            },
+            |mut v| {
+                v.sort_unstable();
+                black_box(v);
+                f_calls.fetch_add(1, Ordering::SeqCst);
+            },
+        );
+
+        assert_eq!(result.samples.len(), 25);
+        assert_eq!(setup_calls.load(Ordering::SeqCst), 25);
+        assert_eq!(f_calls.load(Ordering::SeqCst), 25);
+    }
+
+    #[test]
+    fn test_bench_group_compare() {
+        let mut group = BenchGroup::new("g");
+        group.add("fast", 30, || {
+            let _: u64 = black_box((0..10).sum());
+        });
+        group.add("slow", 30, || {
+            let _: u64 = black_box((0..1000).sum());
+        });
+
+        let cmp = group.compare("slow", "fast").expect("both names present");
+        assert_eq!(cmp.baseline.name, "slow");
+        assert_eq!(cmp.candidate.name, "fast");
+
+        assert!(group.compare("slow", "missing").is_none());
+        assert!(group.compare("missing", "fast").is_none());
     }
 
     #[test]

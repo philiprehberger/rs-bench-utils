@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 (2026-04-27)
+
+- Add `bench_with_setup` for benchmarks where each iteration consumes a fresh input
+- Add `BenchResult::cv()` returning the coefficient of variation as a percentage
+- Add `BenchResult::confidence_interval_95()` returning the 95% CI for the mean
+- Add `BenchGroup::compare(name1, name2)` for pairwise comparison of recorded results
+
 ## 0.1.5 (2026-03-31)
 
 - Standardize README to 3-badge format with emoji Support section
